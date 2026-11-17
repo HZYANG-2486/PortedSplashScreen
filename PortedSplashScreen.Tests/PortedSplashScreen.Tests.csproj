@@ -16,11 +16,11 @@
 
   <ItemGroup>
     <!-- 直接引用被测源码，测试项目无需依赖 Avalonia 与插件 SDK -->
-    <Compile Include="..\MoreSplashScreen\Services\RemoteImageProvider.cs" Link="RemoteImageProvider.cs" />
-    <Compile Include="..\MoreSplashScreen\Services\AnimatedImageTiming.cs" Link="AnimatedImageTiming.cs" />
-    <Compile Include="..\MoreSplashScreen\Services\SplashDuration.cs" Link="SplashDuration.cs" />
-    <Compile Include="..\MoreSplashScreen\Services\FfmpegProvider.cs" Link="FfmpegProvider.cs" />
-    <Compile Include="..\MoreSplashScreen\Services\QuietRestartPolicy.cs" Link="QuietRestartPolicy.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\RemoteImageProvider.cs" Link="RemoteImageProvider.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\AnimatedImageTiming.cs" Link="AnimatedImageTiming.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\SplashDuration.cs" Link="SplashDuration.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\FfmpegProvider.cs" Link="FfmpegProvider.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\QuietRestartPolicy.cs" Link="QuietRestartPolicy.cs" />
   </ItemGroup>
 
   <ItemGroup>

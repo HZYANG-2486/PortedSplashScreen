@@ -32,26 +32,26 @@ jobs:
         run: dotnet test PortedSplashScreen.Tests/PortedSplashScreen.Tests.csproj -c Release --no-restore
 
       - name: Build plugin package (cipx)
-        run: dotnet build MoreSplashScreen/MoreSplashScreen.csproj -c Release --no-restore -p:CreateCipx=true
+        run: dotnet build PortedSplashScreen/PortedSplashScreen.csproj -c Release --no-restore -p:CreateCipx=true
 
       # 文件名带上清单里的版本号，便于区分每次构建
       - name: Rename package
         id: package
         run: |
-          version=$(sed -n 's/^version: *//p' MoreSplashScreen/manifest.yml | tr -d '\r' | head -n1)
+          version=$(sed -n 's/^version: *//p' PortedSplashScreen/manifest.yml | tr -d '\r' | head -n1)
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          mv MoreSplashScreen/cipx/MoreSplashScreen.cipx "MoreSplashScreen/cipx/PortedSplashScreen-$version.cipx"
+          mv PortedSplashScreen/cipx/PortedSplashScreen.cipx "PortedSplashScreen/cipx/PortedSplashScreen-$version.cipx"
           # 没有 pwsh 时 SDK 不会生成校验清单，这里兜底一个空文件，避免上传/发布步骤失败
-          [ -f MoreSplashScreen/cipx/checksums.md ] || printf '' > MoreSplashScreen/cipx/checksums.md
-          ls -l MoreSplashScreen/cipx
+          [ -f PortedSplashScreen/cipx/checksums.md ] || printf '' > PortedSplashScreen/cipx/checksums.md
+          ls -l PortedSplashScreen/cipx
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PortedSplashScreen-${{ steps.package.outputs.version }}
           path: |
-            MoreSplashScreen/cipx/*.cipx
-            MoreSplashScreen/cipx/checksums.md
+            PortedSplashScreen/cipx/*.cipx
+            PortedSplashScreen/cipx/checksums.md
           if-no-files-found: error
 
       # 打 tag（如 v1.0.0.0）时自动创建 Release 并附上插件包
@@ -60,6 +60,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
-          body_path: MoreSplashScreen/cipx/checksums.md
-          files: MoreSplashScreen/cipx/PortedSplashScreen-${{ steps.package.outputs.version }}.cipx
+          body_path: PortedSplashScreen/cipx/checksums.md
+          files: PortedSplashScreen/cipx/PortedSplashScreen-${{ steps.package.outputs.version }}.cipx
           generate_release_notes: true

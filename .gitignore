@@ -366,5 +366,7 @@ cipx/
 *.cipx
 
 .DS_Store
+# JetBrains Rider 本地配置
+.idea/
 # 第三方背景素材不随仓库分发（由插件在运行时按需下载并校验）
-MoreSplashScreen/Assets/**/*.webp
+PortedSplashScreen/Assets/**/*.webp
