@@ -6,9 +6,10 @@ using Avalonia.Interactivity;
 using Avalonia.Rendering.Composition;
 using ClassIsland.Core.Abstractions.Services;
 using ClassIsland.Core.Abstractions.Views;
+using PortedSplashScreen.Services;
 using ReactiveUI;
 
-namespace MoreSplashScreen.Views.SplashScreens;
+namespace PortedSplashScreen.Views.SplashScreens;
 
 /// <summary>
 /// IslandSplashScreen.xaml 的交互逻辑
@@ -19,7 +20,6 @@ public partial class IslandSplashScreen : SplashWindowBase
     public Plugin Plugin { get; }
 
     private double _lastProgress = 0.0;
-    private double _lastProgressDelta = 0.0;
     private IDisposable? _splashStatusObserver;
 
     private bool _canClose = false;
@@ -31,7 +31,11 @@ public partial class IslandSplashScreen : SplashWindowBase
         SplashService = splashService;
         Plugin = plugin;
         InitializeComponent();
+        var cornerRadius = Plugin.ResolveCornerRadius();
+        SplashRootBorder.CornerRadius = new CornerRadius(cornerRadius);
+        SplashCornerClip.Attach(SplashRootBorder, cornerRadius);
         Loaded += OnLoaded;
+        Opened += (_, _) => Reposition();
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -44,22 +48,20 @@ public partial class IslandSplashScreen : SplashWindowBase
         }
     }
 
-    void Cal(object sender, RoutedEventArgs e)
+    void Cal(object sender, RoutedEventArgs e) => Reposition();
+
+    private void Reposition()
     {
-        // 获取屏幕的宽度和高度
-        var screenWidth = Screens.Primary?.Bounds.Width ?? 0;
-        var screenHeight = Screens.Primary?.Bounds.Height ?? 0;
+        // 窗口尚未显示时 Screens 可能拿不到屏幕信息，此时计算出的位置会把窗口推到屏幕外，
+        // 因此这里只做能算准的定位，拿不到屏幕大小时等 Opened 后再定位。
+        var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary ?? Screens.All.FirstOrDefault();
+        if (screen is null || screen.Bounds.Width <= 0)
+        {
+            return;
+        }
 
-        // 获取窗口的宽度和高度
-        var windowWidth = this.Width;
-        var windowHeight = this.Height;
-
-        // 计算窗口的左上角位置，使窗口居中
-
-        var x = (int)(screenWidth - windowWidth) / 2;
-        //CommonDialog.ShowHint(this.Left.ToString());
-        const int y = (int)0;
-        Position = new PixelPoint(x, y);
+        var windowWidth = double.IsFinite(Width) && Width > 0 ? Width : Bounds.Width;
+        Position = new PixelPoint((int)((screen.Bounds.Width - windowWidth) / 2), 0);
     }
 
     private void SplashServiceOnProgressChanged(object? sender, double e)
@@ -103,6 +105,7 @@ public partial class IslandSplashScreen : SplashWindowBase
         _splashStatusObserver ??= SplashService.ObservableForProperty(x => x.SplashStatus)
             .Subscribe(_ => TryRunJobs());
         await base.StartSplash();
+        SplashTiming.MarkStarted();
     }
 
     public override async Task EndSplash()
@@ -110,7 +113,8 @@ public partial class IslandSplashScreen : SplashWindowBase
         SplashService.ProgressChanged -= SplashServiceOnProgressChanged;
         _splashStatusObserver?.Dispose();
         _splashStatusObserver = null;
-        await UpdateAnimationAsync(100, true);
+        // 启动条紧贴屏幕顶部，与主界面顶栏位置重叠，启动完成后立即收起；
+        // 若继续等待固定显示时长，启动条会与主界面叠在一起。
         _canClose = true;
         await base.EndSplash();
     }

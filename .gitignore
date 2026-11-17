@@ -366,3 +366,5 @@ cipx/
 *.cipx
 
 .DS_Store
+# 第三方背景素材不随仓库分发（由插件在运行时按需下载并校验）
+MoreSplashScreen/Assets/**/*.webp

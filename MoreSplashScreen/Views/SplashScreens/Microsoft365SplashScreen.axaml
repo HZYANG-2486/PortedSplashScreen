@@ -1,14 +1,15 @@
-﻿<ci:SplashWindowBase x:Class="MoreSplashScreen.Views.SplashScreens.Microsoft365SplashScreen"
+﻿<ci:SplashWindowBase x:Class="PortedSplashScreen.Views.SplashScreens.Microsoft365SplashScreen"
                   xmlns="https://github.com/avaloniaui"
                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                  xmlns:local="clr-namespace:MoreSplashScreen.Views.SplashScreens"
+                  xmlns:local="clr-namespace:PortedSplashScreen.Views.SplashScreens"
                   xmlns:ci="http://classisland.tech/schemas/xaml/core"
                   xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                   mc:Ignorable="d"
                   Title="ClassIsland 正在启动" Height="250" Width="400"
                   ShowInTaskbar="False"
+                  Topmost="True"
                   WindowStartupLocation="CenterScreen"
                   SystemDecorations="None"
                   FontFamily="{StaticResource AppFont}"
@@ -19,7 +20,7 @@
                   Background="{x:Null}"
                   TransparencyLevelHint="Transparent"
                   DataContext="{Binding RelativeSource={RelativeSource Self}}">
-    <Border Background="White" CornerRadius="8">
+    <Border x:Name="SplashRootBorder" Background="White" CornerRadius="8">
         <!--<Image Source="/MoreSplashScreen;component/ref.png" Stretch="Fill"/>-->
         <Grid Margin="8,8,8,8">
             <Border Background="#80DFFF"

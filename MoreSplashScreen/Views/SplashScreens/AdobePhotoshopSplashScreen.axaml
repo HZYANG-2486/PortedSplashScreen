@@ -1,4 +1,4 @@
-<ci:SplashWindowBase x:Class="MoreSplashScreen.Views.SplashScreens.AdobePhotoshopSplashScreen"
+<ci:SplashWindowBase x:Class="PortedSplashScreen.Views.SplashScreens.AdobePhotoshopSplashScreen"
        xmlns="https://github.com/avaloniaui"
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
        xmlns:ci="http://classisland.tech/schemas/xaml/core"
@@ -12,7 +12,7 @@
        WindowStartupLocation="CenterScreen"
        DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
-    <Border CornerRadius="20" Background="White" BorderBrush="#DDD" BorderThickness="1">
+    <Border x:Name="SplashRootBorder" CornerRadius="20" Background="White">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2.2*" />
@@ -57,8 +57,19 @@
             <Border Grid.Column="1" Width="1" Background="#EEE" Margin="0,32,0,32"/>
 
             <!-- 插图区 -->
-            <Border Grid.Column="2" CornerRadius="16" ClipToBounds="True" Margin="24,24,24,24" Background="#F8F8F8">
-                <Image Source="avares://MoreSplashScreen/Assets/AdobePhotoshop/Foremist.webp" Stretch="UniformToFill" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            <Border x:Name="SplashImageBorder" Grid.Column="2" CornerRadius="16" ClipToBounds="True" Margin="24,24,24,24" Background="#F8F8F8">
+                <Panel>
+                    <!-- 插图未缓存或下载失败时的占位背景 -->
+                    <Border>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                <GradientStop Color="#F3F5F9" Offset="0" />
+                                <GradientStop Color="#D6DEEA" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Image x:Name="SplashImageControl" Stretch="UniformToFill" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </Panel>
             </Border>
         </Grid>
     </Border>

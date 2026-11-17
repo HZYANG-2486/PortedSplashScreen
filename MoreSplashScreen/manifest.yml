@@ -2,11 +2,11 @@
 # YAML 教程：https://www.runoob.com/w3cnote/yaml-intro.html
 # 插件清单格式：https://docs.classisland.tech/zh-cn/latest/dev/plugins/create-project/#%E6%8F%92%E4%BB%B6%E6%B8%85%E5%8D%95%E6%96%87%E4%BB%B6
 
-id: dev.hellowrc.classisland.moreSplashScreen
-name: MoreSplashScreen
-description: 向 ClassIsland 添加更丰富多彩的启动画面！
-entranceAssembly: "MoreSplashScreen.dll"
-url: https://github.com/HelloWRC/MoreSplashScreen
-version: 0.0.2.0
-apiVersion: 2.2.0.0
-author: HelloWRC
+id: com.ported.classisland.portedSplashScreen
+name: PortedSplashScreen
+description: MoreSplashScreen 的 V2 非官方移植版。
+entranceAssembly: "PortedSplashScreen.dll"
+url: https://github.com/HZYANG-2486/PortedSplashScreen
+version: 1.0.0.0
+apiVersion: 2.1.0.0
+author: HZYANG

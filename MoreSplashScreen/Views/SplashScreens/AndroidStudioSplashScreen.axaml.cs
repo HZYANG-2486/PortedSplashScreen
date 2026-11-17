@@ -1,5 +1,5 @@
-﻿using System.ComponentModel;
-using Avalonia.Animation.Easings;
+﻿using Avalonia.Animation.Easings;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -9,9 +9,10 @@ using Avalonia.Rendering.Composition;
 using ClassIsland.Core;
 using ClassIsland.Core.Abstractions.Services;
 using ClassIsland.Core.Abstractions.Views;
+using PortedSplashScreen.Services;
 using ReactiveUI;
 
-namespace MoreSplashScreen.Views.SplashScreens;
+namespace PortedSplashScreen.Views.SplashScreens;
 
 /// <summary>
 /// AndroidStudioSplashScreen.xaml 的交互逻辑
@@ -23,18 +24,36 @@ public partial class AndroidStudioSplashScreen : SplashWindowBase
     
     private double _lastProgress = 0.0;
     private IDisposable? _splashStatusObserver;
+    private AnimatedImagePlayer? _imagePlayer;
+    private VideoSplashPlayer? _videoPlayer;
 
     private bool _canClose = false;
-
-    public IImage? SplashImage { get; }
+    private bool _assetsReleased;
 
     public AndroidStudioSplashScreen(ISplashService splashService, Plugin plugin)
     {
         SplashService = splashService;
         Plugin = plugin;
-        SplashImage = GetSplashImage();
         InitializeComponent();
+        SplashBackgroundBorder.Background = new SolidColorBrush(Plugin.Settings.AndroidStudioBackgroundColor);
+        var cornerRadius = Plugin.ResolveCornerRadius();
+        SplashBackgroundBorder.CornerRadius = new CornerRadius(cornerRadius);
+        SplashCornerClip.Attach(SplashBackgroundBorder, cornerRadius);
         Loaded += OnLoaded;
+        Closed += (_, _) => ReleaseSplashAssets();
+        _ = LoadSplashImageAsync();
+    }
+
+    /// <summary>
+    /// 释放动图/视频播放器。真实启动画面关闭时和设置页预览关闭时都会调用。
+    /// </summary>
+    internal void ReleaseSplashAssets()
+    {
+        _assetsReleased = true;
+        _imagePlayer?.Dispose();
+        _imagePlayer = null;
+        _videoPlayer?.Dispose();
+        _videoPlayer = null;
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -54,24 +73,105 @@ public partial class AndroidStudioSplashScreen : SplashWindowBase
         return bitmap;
     }
 
-    private IImage? GetSplashImage()
+    private async Task LoadSplashImageAsync()
     {
-        try
+        // 文件夹图片优先于单张自定义背景
+        if (Plugin.ResolveFolderSplashImage() is { } folderImage && TryApplySplashImage(folderImage))
         {
-            return Plugin.Settings.IsCustomAndroidStudioSplashImageEnabled ? GetBitmapFromUri(new Uri(Plugin.Settings.CustomAndroidStudioSplashImagePath, UriKind.RelativeOrAbsolute)) : GetDefaultSplashImage();
+            return;
         }
-        catch (Exception e)
+
+        if (Plugin.Settings.AndroidStudioBackgroundSource == 1)
         {
-            return null;
+            var customPath = Plugin.Settings.CustomAndroidStudioSplashImagePath;
+            var resolvedPath = await RemoteImageProvider.ResolveAsync(customPath);
+            try
+            {
+                if (resolvedPath != null)
+                {
+                    if (TryApplySplashImage(resolvedPath))
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    SplashImageControl.Source = GetBitmapFromUri(new Uri(customPath, UriKind.RelativeOrAbsolute));
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                // 自定义图片不可用时继续尝试内置素材
+            }
         }
-        
+
+        var asset = Plugin.ResolveAndroidStudioAsset();
+        if (asset == null)
+        {
+            return;
+        }
+
+        var path = SplashAssetProvider.GetCachedPath(asset) ??
+                   await SplashAssetProvider.EnsureAsync(asset, Plugin.Settings.AllowRemoteAssetDownload);
+        if (path != null)
+        {
+            TryApplySplashImage(path);
+        }
     }
 
-    private Bitmap GetDefaultSplashImage()
+    /// <summary>
+    /// 加载静态图片；GIF/动态 WebP 播放动画；视频文件通过 FFmpeg 解码播放。
+    /// </summary>
+    private bool TryApplySplashImage(string path)
     {
-        return GetBitmapFromUri(new Uri($"avares://MoreSplashScreen/Assets/AndroidStudio/{AppBase.AppCodeName}.webp", UriKind.RelativeOrAbsolute));
+        if (_assetsReleased)
+        {
+            return false;
+        }
+
+        _imagePlayer?.Dispose();
+        _imagePlayer = null;
+        _videoPlayer?.Dispose();
+        _videoPlayer = null;
+
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        if (FfmpegProvider.IsVideoFile(path))
+        {
+            var ffmpeg = FfmpegProvider.Resolve(Plugin.Settings.FfmpegPath);
+            if (ffmpeg == null)
+            {
+                return false;
+            }
+
+            // 窗口为 640×400，解码尺寸与显示区域一致
+            _videoPlayer = VideoSplashPlayer.TryCreate(SplashImageControl, path, ffmpeg, 640, 400);
+            return _videoPlayer != null;
+        }
+
+        var player = AnimatedImagePlayer.TryCreate(SplashImageControl, path);
+        if (player != null)
+        {
+            _imagePlayer = player;
+            return true;
+        }
+
+        try
+        {
+            using var stream = File.OpenRead(path);
+            SplashImageControl.Source = new Bitmap(stream);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
-    
+
 
     private void SplashServiceOnProgressChanged(object? sender, double e)
     {
@@ -114,6 +214,7 @@ public partial class AndroidStudioSplashScreen : SplashWindowBase
         _splashStatusObserver ??= SplashService.ObservableForProperty(x => x.SplashStatus)
             .Subscribe(_ => TryRunJobs());
         await base.StartSplash();
+        SplashTiming.MarkStarted();
     }
 
     public override async Task EndSplash()
@@ -122,6 +223,7 @@ public partial class AndroidStudioSplashScreen : SplashWindowBase
         _splashStatusObserver?.Dispose();
         _splashStatusObserver = null;
         await UpdateAnimationAsync(100, true);
+        await SplashTiming.WaitForFixedDurationAsync();
         _canClose = true;
         await base.EndSplash();
     }

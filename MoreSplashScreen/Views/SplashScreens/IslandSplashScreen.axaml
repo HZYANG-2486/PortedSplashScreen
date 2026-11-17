@@ -1,9 +1,9 @@
-﻿<Window  x:Class="MoreSplashScreen.Views.SplashScreens.IslandSplashScreen"
+﻿<Window  x:Class="PortedSplashScreen.Views.SplashScreens.IslandSplashScreen"
                         xmlns="https://github.com/avaloniaui"
                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                        xmlns:local="clr-namespace:MoreSplashScreen.Views.SplashScreens"
+                        xmlns:local="clr-namespace:PortedSplashScreen.Views.SplashScreens"
                         xmlns:ci="http://classisland.tech/schemas/xaml/core"
                         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                         mc:Ignorable="d"
@@ -11,6 +11,7 @@
                         TextElement.Foreground="#FFFFFF"
                         TransparencyLevelHint="Transparent"
                         SystemDecorations="None"
+                        CanResize="False"
                         WindowStartupLocation="Manual"
                         Title="ClassIsland 正在启动" Height="60" Width="420"
                         Loaded="Cal"
@@ -19,7 +20,7 @@
                         Topmost="True"
                         Closing="IslandSplashScreen_OnClosing"
                         DataContext="{Binding RelativeSource={RelativeSource Self}}">
-    <Border CornerRadius="4" Background="#111111" ClipToBounds="True">
+    <Border x:Name="SplashRootBorder" CornerRadius="4" Background="#111111" ClipToBounds="True">
         <Grid>
             <Canvas Height="4" Width="400"  VerticalAlignment="Bottom" ClipToBounds="True">
                 <Rectangle Width="400" Height="4" Fill="DodgerBlue" Canvas.Bottom="0"

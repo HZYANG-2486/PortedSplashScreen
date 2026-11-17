@@ -1,9 +1,9 @@
-﻿<ci:SettingsPageBase x:Class="MoreSplashScreen.Views.SettingsPages.SplashSettingsPage"
+﻿<ci:SettingsPageBase x:Class="PortedSplashScreen.Views.SettingsPages.SplashSettingsPage"
       xmlns="https://github.com/avaloniaui"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:MoreSplashScreen.Views.SettingsPages"
+      xmlns:local="clr-namespace:PortedSplashScreen.Views.SettingsPages"
       xmlns:ci="http://classisland.tech/schemas/xaml/core"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
@@ -16,57 +16,51 @@
     </ci:SettingsPageBase.Resources>
     <ScrollViewer>
         <StackPanel Classes="settings-container animated-intro">
+            <TextBlock Margin="0,0,0,4" FontSize="12" LineHeight="19" TextWrapping="Wrap"
+                       Classes="l-instructive"
+                       Text="PortedSplashScreen 是 MoreSplashScreen 的 V2 非官方移植版。" />
             <!-- 自定义启动屏幕 -->
-            <controls:FASettingsExpander Header="启动屏幕类型"
-                                       Description="应用启动时要使用的启动屏幕。"
+            <controls:SettingsExpander Header="启动屏幕类型"
+                                       Description="应用启动时要使用的启动屏幕。修改后需重启应用生效。"
                                        IconSource="{ci:FluentIconSource &#xEEA1;}">
-                <controls:FASettingsExpander.Footer>
+                <controls:SettingsExpander.Footer>
                     <ComboBox SelectedIndex="{Binding Plugin.Settings.SplashKind}"
                               MinWidth="150">
                         <ComboBoxItem>应用默认</ComboBoxItem>
                         <ComboBoxItem>Android Studio</ComboBoxItem>
                         <ComboBoxItem>Microsoft 365</ComboBoxItem>
-                        <ComboBoxItem IsEnabled="False">Microsoft Office (旧)</ComboBoxItem>
+                        <ComboBoxItem>Microsoft Office (旧)</ComboBoxItem>
                         <ComboBoxItem IsEnabled="False">JetBrains IDEs</ComboBoxItem>
                         <ComboBoxItem IsEnabled="False">dotUltimate</ComboBoxItem>
                         <ComboBoxItem>IslandOnTop</ComboBoxItem>
                         <ComboBoxItem>Adobe Photoshop</ComboBoxItem>
                         <ComboBoxItem>ALLS</ComboBoxItem>
                     </ComboBox>
-                </controls:FASettingsExpander.Footer>
-            </controls:FASettingsExpander>
+                </controls:SettingsExpander.Footer>
+            </controls:SettingsExpander>
 
-            <!-- 自定义启动屏幕背景 -->
-            <controls:FASettingsExpander Header="自定义启动屏幕背景"
-                                       Description="是否自定义启动屏幕上显示的背景图像。默认情况下，将根据当前版本代号选择背景图像。"
-                                       IconSource="{ci:FluentIconSource &#xE9B2;}"
-                                       IsExpanded="{Binding Plugin.Settings.IsCustomAndroidStudioSplashImageEnabled, Mode=OneWay}">
-                <controls:FASettingsExpander.Footer>
-                    <StackPanel Orientation="Horizontal" Spacing="4" Classes="items-valign-center">
-                        <ListBox
-                            Theme="{StaticResource ChipListBoxTheme}"
-                            SelectionMode="Single">
-                            <ListBox.SelectedIndex>
-                                <Binding Path="Plugin.Settings.CustomAndroidStudioSplashImageKind"
-                                         Converter="{StaticResource PreventNullConverter}">
-                                </Binding>
-                            </ListBox.SelectedIndex>
-                            <ListBoxItem Content="内置" />
-                            <ListBoxItem Content="自定义" />
-                        </ListBox>
-                        <ToggleSwitch IsChecked="{Binding Plugin.Settings.IsCustomAndroidStudioSplashImageEnabled}"/>
-                    </StackPanel>
-                </controls:FASettingsExpander.Footer>
-                <controls:FASettingsExpander.IsVisible>
+            <!-- Android Studio 启动屏幕背景 -->
+            <controls:SettingsExpander Header="启动屏幕背景"
+                                       Description="选择内置插画、自定义图片/视频，或从文件夹轮播。文件夹模式每次启动切换一张，随机模式每次随机；支持 png/jpg/jpeg/webp/bmp/gif 与 mp4/webm/mov/mkv，GIF、动态 WebP 与视频会播放动画（视频需要 FFmpeg）。修改后需重启应用生效。"
+                                       IconSource="{ci:FluentIconSource &#xE9B2;}">
+                <controls:SettingsExpander.IsVisible>
                     <Binding Path="Plugin.Settings.SplashKind" Converter="{x:Static ObjectConverters.Equal}">
                         <Binding.ConverterParameter>
                             <x:Int32>1</x:Int32>
                         </Binding.ConverterParameter>
                     </Binding>
-                </controls:FASettingsExpander.IsVisible>
-                <TabControl SelectedIndex="{Binding Plugin.Settings.CustomAndroidStudioSplashImageKind}">
-                    <TabItem IsVisible="False">
-                        <ci:Field Label="启动屏幕类型">
+                </controls:SettingsExpander.IsVisible>
+                <controls:SettingsExpander.Footer>
+                    <ListBox x:Name="AsBackgroundModeBox" Theme="{StaticResource ChipListBoxTheme}"
+                             SelectionMode="Single">
+                        <ListBoxItem Content="内置" />
+                        <ListBoxItem Content="自定义" />
+                        <ListBoxItem Content="轮播" />
+                    </ListBox>
+                </controls:SettingsExpander.Footer>
+                <StackPanel Spacing="8" Margin="0,4,0,0">
+                    <StackPanel x:Name="AsBuiltInPanel" Spacing="6">
+                        <ci:Field Label="内置背景">
                             <ComboBox
                                 ItemsSource="{Binding Source={x:Static local:SplashSettingsPage.InternalImages}}"
                                 SelectedValueBinding="{Binding Value}"
@@ -80,15 +74,202 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                         </ci:Field>
-                    </TabItem>
-                    <TabItem IsVisible="False">
-                        <ci:Field Label="启动背景路径">
-                            <TextBox Text="{Binding Plugin.Settings.CustomAndroidStudioSplashImagePath}"/>
+                    </StackPanel>
+                    <StackPanel x:Name="AsCustomPanel" Spacing="6">
+                        <ci:Field Label="背景文件">
+                            <TextBox Text="{Binding Plugin.Settings.CustomAndroidStudioSplashImagePath}"
+                                     Watermark="本地图片/视频路径，或 https:// 网络图片链接" />
                         </ci:Field>
-                    </TabItem>
-                </TabControl>
-            </controls:FASettingsExpander>
-            
+                    </StackPanel>
+                    <StackPanel x:Name="AsFolderPanel" Spacing="8">
+                        <ci:Field Label="背景文件夹">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Text="{Binding Plugin.Settings.CustomImageFolderPath}"
+                                         Watermark="例如 /home/user/Pictures/Splash" />
+                                <Button Grid.Column="1" Margin="8,0,0,0" Content="浏览…"
+                                        Click="OnBrowseFolderClick" />
+                            </Grid>
+                        </ci:Field>
+                        <ci:Field Label="切换方式">
+                            <ComboBox SelectedIndex="{Binding Plugin.Settings.ImageFolderMode}" MinWidth="160">
+                                <ComboBoxItem>顺序轮播</ComboBoxItem>
+                                <ComboBoxItem>随机</ComboBoxItem>
+                            </ComboBox>
+                        </ci:Field>
+                        <TextBlock x:Name="AsFolderImageStatusText"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Classes="l-instructive" />
+                    </StackPanel>
+                </StackPanel>
+            </controls:SettingsExpander>
+
+            <!-- Android Studio 启动屏幕背景颜色 -->
+            <controls:SettingsExpander Header="启动背景颜色"
+                                       Description="Android Studio 启动屏幕人物插画背后的底色，修改后需重启应用生效。"
+                                       IconSource="{ci:FluentIconSource &#xE790;}"
+                                       IsExpanded="True">
+                <controls:SettingsExpander.IsVisible>
+                    <Binding Path="Plugin.Settings.SplashKind" Converter="{x:Static ObjectConverters.Equal}">
+                        <Binding.ConverterParameter>
+                            <x:Int32>1</x:Int32>
+                        </Binding.ConverterParameter>
+                    </Binding>
+                </controls:SettingsExpander.IsVisible>
+                <controls:SettingsExpander.Footer>
+                    <ColorPicker Color="{Binding Plugin.Settings.AndroidStudioBackgroundColor, Mode=TwoWay}"
+                                 HorizontalAlignment="Left" />
+                </controls:SettingsExpander.Footer>
+            </controls:SettingsExpander>
+
+            <!-- Adobe Photoshop 启动屏幕背景 -->
+            <controls:SettingsExpander Header="启动屏幕背景"
+                                       Description="选择内置 Foremist 背景、自定义图片/视频，或从文件夹轮播。支持 http/https 图片链接，可配合每日壁纸类接口；文件夹模式支持图片与视频（视频需要 FFmpeg）。修改后需重启应用生效。"
+                                       IconSource="{ci:FluentIconSource &#xE9B2;}">
+                <controls:SettingsExpander.Footer>
+                    <ListBox x:Name="PsBackgroundModeBox" Theme="{StaticResource ChipListBoxTheme}"
+                             SelectionMode="Single">
+                        <ListBoxItem Content="内置" />
+                        <ListBoxItem Content="自定义" />
+                        <ListBoxItem Content="轮播" />
+                    </ListBox>
+                </controls:SettingsExpander.Footer>
+                <controls:SettingsExpander.IsVisible>
+                    <Binding Path="Plugin.Settings.SplashKind" Converter="{x:Static ObjectConverters.Equal}">
+                        <Binding.ConverterParameter>
+                            <x:Int32>7</x:Int32>
+                        </Binding.ConverterParameter>
+                    </Binding>
+                </controls:SettingsExpander.IsVisible>
+                <StackPanel Spacing="8" Margin="0,4,0,0">
+                    <StackPanel x:Name="PsCustomPanel" Spacing="6">
+                        <ci:Field Label="背景文件">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Text="{Binding Plugin.Settings.CustomPhotoshopSplashImagePath}"
+                                         Watermark="例如 /home/user/Pictures/ps-splash.png、…/splash.mp4 或 https://…/daily.jpg" />
+                                <Button Grid.Column="1" Margin="8,0,0,0" Content="浏览…"
+                                        Click="OnBrowsePhotoshopImageClick" />
+                            </Grid>
+                        </ci:Field>
+                    </StackPanel>
+                    <StackPanel x:Name="PsFolderPanel" Spacing="8">
+                        <ci:Field Label="背景文件夹">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Text="{Binding Plugin.Settings.CustomImageFolderPath}"
+                                         Watermark="例如 /home/user/Pictures/Splash" />
+                                <Button Grid.Column="1" Margin="8,0,0,0" Content="浏览…"
+                                        Click="OnBrowseFolderClick" />
+                            </Grid>
+                        </ci:Field>
+                        <ci:Field Label="切换方式">
+                            <ComboBox SelectedIndex="{Binding Plugin.Settings.ImageFolderMode}" MinWidth="160">
+                                <ComboBoxItem>顺序轮播</ComboBoxItem>
+                                <ComboBoxItem>随机</ComboBoxItem>
+                            </ComboBox>
+                        </ci:Field>
+                        <TextBlock x:Name="PsFolderImageStatusText"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Classes="l-instructive" />
+                    </StackPanel>
+                </StackPanel>
+            </controls:SettingsExpander>
+
+            <!-- 视频背景解码器 -->
+            <controls:SettingsExpander x:Name="VideoDecoderExpander"
+                                       Header="视频背景解码器（FFmpeg）"
+                                       Description="插件不包含 FFmpeg 解码器。把 mp4/webm/mov/mkv 等视频用作启动背景时，需要安装 FFmpeg，或点击“下载解码器”保存到插件配置目录。"
+                                       IconSource="{ci:FluentIconSource &#xE714;}">
+                <StackPanel Spacing="8" Margin="0,4,0,0">
+                    <ci:Field Label="FFmpeg 路径（可选）">
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                            <TextBox Text="{Binding Plugin.Settings.FfmpegPath}"
+                                     Watermark="可填写 ffmpeg 可执行文件或其所在目录，留空则自动查找插件缓存与系统 PATH" />
+                            <Button Grid.Column="1" Margin="8,0,0,0" Content="浏览…"
+                                    Click="OnBrowseFfmpegClick" />
+                            <Button x:Name="FfmpegDownloadButton" Grid.Column="2" Margin="8,0,0,0"
+                                    Content="下载解码器" Click="OnDownloadFfmpegClick" />
+                            <Button x:Name="FfmpegCancelButton" Grid.Column="3" Margin="8,0,0,0"
+                                    Content="取消" IsVisible="False" Click="OnCancelFfmpegClick" />
+                        </Grid>
+                    </ci:Field>
+                    <ProgressBar x:Name="FfmpegProgressBar" Height="4"
+                                 Minimum="0" Maximum="100" IsVisible="False" />
+                    <TextBlock x:Name="FfmpegStatusText"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Classes="l-instructive"
+                               Text="正在检查 FFmpeg…" />
+                </StackPanel>
+            </controls:SettingsExpander>
+
+            <!-- 固定显示时长（IslandOnTop 启动条与主界面顶栏重叠，启动完成后立即收起，不适用） -->
+            <controls:SettingsExpander Header="固定显示时长"
+                                       Description="启用后，启动画面至少显示指定时长：即使 ClassIsland 已完成启动，也会继续显示到时间结束；若启动耗时超过该时长，则在启动完成后立即关闭。"
+                                       IconSource="{ci:FluentIconSource &#xE916;}"
+                                       IsExpanded="{Binding Plugin.Settings.IsFixedDurationEnabled, Mode=OneWay}">
+                <controls:SettingsExpander.IsVisible>
+                    <Binding Path="Plugin.Settings.SplashKind" Converter="{x:Static ObjectConverters.NotEqual}">
+                        <Binding.ConverterParameter>
+                            <x:Int32>6</x:Int32>
+                        </Binding.ConverterParameter>
+                    </Binding>
+                </controls:SettingsExpander.IsVisible>
+                <controls:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.IsFixedDurationEnabled}" />
+                </controls:SettingsExpander.Footer>
+                <ci:Field Label="至少显示（秒）" Margin="0,4,0,0">
+                    <controls:NumberBox Minimum="0" Maximum="300"
+                                        SpinButtonPlacementMode="Compact"
+                                        Value="{Binding Plugin.Settings.FixedDurationSeconds}" />
+                </ci:Field>
+            </controls:SettingsExpander>
+
+            <!-- 静默重启时跳过启动画面 -->
+            <controls:SettingsExpander Header="静默重启时跳过启动画面"
+                                       Description="ClassIsland 因异常崩溃恢复、内存看门狗等原因静默重启时，不再显示启动画面，避免打扰。手动启动与正常重启不受影响。修改后需重启应用生效。"
+                                       IconSource="{ci:FluentIconSource &#xE7E8;}">
+                <controls:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.SkipSplashOnQuietRestart}" />
+                </controls:SettingsExpander.Footer>
+            </controls:SettingsExpander>
+
+            <!-- 网络图片超时 -->
+            <controls:SettingsExpander x:Name="NetworkTimeoutExpander"
+                                       Header="网络图片获取超时"
+                                       Description="下载网络背景与内置素材的最长等待时间。超时后使用已有缓存或占位背景，避免网络缓慢拖慢启动。下次启动生效。"
+                                       IconSource="{ci:FluentIconSource &#xE774;}">
+                <controls:SettingsExpander.Footer>
+                    <controls:NumberBox MinWidth="120"
+                                        Minimum="1" Maximum="120"
+                                        SpinButtonPlacementMode="Compact"
+                                        Value="{Binding Plugin.Settings.NetworkTimeoutSeconds}" />
+                </controls:SettingsExpander.Footer>
+            </controls:SettingsExpander>
+
+            <controls:SettingsExpander x:Name="CornerRadiusExpander"
+                                       Header="启动屏幕圆角"
+                                       Description="显示当前样式的默认圆角，可自行修改；切换样式时会恢复该样式的默认值。"
+                                       IconSource="{ci:FluentIconSource &#xE7FB;}"
+                                       IsExpanded="False">
+                <controls:SettingsExpander.Footer>
+                    <controls:NumberBox x:Name="CornerRadiusBox"
+                                        MinWidth="120"
+                                        Minimum="0" Maximum="100"
+                                        SpinButtonPlacementMode="Compact" />
+                </controls:SettingsExpander.Footer>
+            </controls:SettingsExpander>
+
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                <Button Content="预览启动画面"
+                        Click="OnPreviewSplashClick"
+                        ToolTip.Tip="按当前设置静态预览启动画面，不会影响真实启动动画" />
+                <TextBlock x:Name="PreviewHintText"
+                           VerticalAlignment="Center"
+                           Classes="l-instructive"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
             <TextBlock Margin="0 6 0 0" LineHeight="21" FontSize="13"
                        Classes="l-instructive" TextWrapping="Wrap">
                 <Run>启动背景的内置图像使用了以下作品：</Run><LineBreak/>
@@ -100,6 +281,25 @@
                 <LineBreak/>
                 <Run>Foremist © 2025 by DannyFeng is licensed under CC BY-NC-ND 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/</Run>
             </TextBlock>
+
+            <controls:SettingsExpander Header="按需下载背景素材"
+                                       Description="内置背景图不随插件分发，需要时从原版仓库（GitHub raw，失败时回退 jsDelivr 镜像）下载，校验 SHA-256 后缓存到插件目录。关闭后将只使用已有缓存，缺失时显示占位背景。"
+                                       IconSource="{ci:FluentIconSource &#xE896;}">
+                <controls:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.AllowRemoteAssetDownload}" />
+                </controls:SettingsExpander.Footer>
+            </controls:SettingsExpander>
+
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
+                <Button Content="检查并下载当前所需素材" Click="OnCheckAssetsClick" />
+                <TextBlock x:Name="AssetStatusText"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           MaxWidth="520"
+                           TextWrapping="Wrap"
+                           Classes="l-instructive"
+                           Text="正在检查背景素材缓存…" />
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </ci:SettingsPageBase>

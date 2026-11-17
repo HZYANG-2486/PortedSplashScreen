@@ -1,9 +1,9 @@
-﻿<ci:SplashWindowBase  x:Class="MoreSplashScreen.Views.SplashScreens.AndroidStudioSplashScreen"
+﻿<ci:SplashWindowBase  x:Class="PortedSplashScreen.Views.SplashScreens.AndroidStudioSplashScreen"
                         xmlns="https://github.com/avaloniaui"
                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                        xmlns:local="clr-namespace:MoreSplashScreen.Views.SplashScreens"
+                        xmlns:local="clr-namespace:PortedSplashScreen.Views.SplashScreens"
                         xmlns:ci="http://classisland.tech/schemas/xaml/core"
                         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                         mc:Ignorable="d"
@@ -11,6 +11,7 @@
                         TextElement.Foreground="#111111"
                         TransparencyLevelHint="Transparent"
                         SystemDecorations="None"
+                        CanResize="False"
                         WindowStartupLocation="CenterScreen"
                         Title="ClassIsland 正在启动" Height="400" Width="640"
                         Cursor="Wait"
@@ -18,9 +19,10 @@
                         Topmost="True"
                         Closing="AndroidStudioSplashScreen_OnClosing"
                         DataContext="{Binding RelativeSource={RelativeSource Self}}">
-    <Border CornerRadius="4" Background="White" ClipToBounds="True">
+    <Border x:Name="SplashBackgroundBorder" CornerRadius="4" Background="White" ClipToBounds="True">
         <Grid>
-            <Image Source="{Binding SplashImage}" Stretch="UniformToFill"/>
+            <!-- 底色由“启动背景颜色”设置决定，插画为透明图时透出该颜色 -->
+            <Image x:Name="SplashImageControl" Stretch="UniformToFill"/>
 
             <Grid VerticalAlignment="Top" HorizontalAlignment="Left"
                   Margin="400,32,0,0" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,Auto">

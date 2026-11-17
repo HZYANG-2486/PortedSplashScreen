@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<AssemblyName>PortedSplashScreen</AssemblyName>
+		<RootNamespace>PortedSplashScreen</RootNamespace>
 	    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<PlatformTarget>AnyCPU</PlatformTarget>
@@ -10,11 +12,18 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<ClassIslandPluginSdkVersion>2.0.3.1-dev2943</ClassIslandPluginSdkVersion>
+		<ClassIslandPluginSdkVersion>2.1.0.1</ClassIslandPluginSdkVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ClassIsland.PluginSdk" Version="2.1.1-misha-dev3182">
+		<PackageReference Include="ClassIsland.PluginSdk" Version="$(ClassIslandPluginSdkVersion)">
+			<ExcludeAssets>runtime; native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="FluentAvaloniaUI" Version="2.4.1">
+			<ExcludeAssets>runtime; native</ExcludeAssets>
+		</PackageReference>
+		<!-- 使用 SkiaSharp 解码 GIF / 动态 WebP；运行时由 ClassIsland 自带 -->
+		<PackageReference Include="SkiaSharp" Version="2.88.9">
 			<ExcludeAssets>runtime; native</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
@@ -26,7 +35,8 @@
 		<None Update="README.md">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<AvaloniaResource Include="Assets\**" />
+		<!-- 第三方背景素材不随插件分发，由插件在运行时按需下载并校验 -->
+		<AvaloniaResource Include="Assets\**" Exclude="Assets\**\*.webp" />
 	</ItemGroup>
 
 	<ItemGroup>
