@@ -154,11 +154,13 @@ public partial class AndroidStudioSplashScreen : SplashWindowBase
             }
 
             // 窗口为 640×400，解码尺寸与显示区域一致
-            _videoPlayer = VideoSplashPlayer.TryCreate(SplashImageControl, path, ffmpeg, 640, 400);
+            _videoPlayer = VideoSplashPlayer.TryCreate(SplashImageControl, path, ffmpeg, 640, 400,
+                Plugin.Settings.UseRenderThreadPlayback);
             return _videoPlayer != null;
         }
 
-        var player = AnimatedImagePlayer.TryCreate(SplashImageControl, path);
+        var player = AnimatedImagePlayer.TryCreate(SplashImageControl, path,
+            Plugin.Settings.UseRenderThreadPlayback);
         if (player != null)
         {
             _imagePlayer = player;

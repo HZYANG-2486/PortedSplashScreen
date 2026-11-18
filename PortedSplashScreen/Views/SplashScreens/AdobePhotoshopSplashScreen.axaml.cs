@@ -108,11 +108,13 @@ public partial class AdobePhotoshopSplashScreen : SplashWindowBase
             }
 
             // Photoshop 的右侧插图区约为 480×560
-            _videoPlayer = VideoSplashPlayer.TryCreate(SplashImageControl, path, ffmpeg, 480, 560);
+            _videoPlayer = VideoSplashPlayer.TryCreate(SplashImageControl, path, ffmpeg, 480, 560,
+                Plugin.Instance?.Settings.UseRenderThreadPlayback == true);
             return _videoPlayer != null;
         }
 
-        var player = AnimatedImagePlayer.TryCreate(SplashImageControl, path);
+        var player = AnimatedImagePlayer.TryCreate(SplashImageControl, path,
+            Plugin.Instance?.Settings.UseRenderThreadPlayback == true);
         if (player != null)
         {
             _imagePlayer = player;

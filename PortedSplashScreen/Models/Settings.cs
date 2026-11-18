@@ -99,6 +99,12 @@ public partial class Settings : ObservableObject
     /// 自定义 FFmpeg 可执行文件或所在目录；留空时自动查找插件缓存与系统 PATH。
     /// </summary>
     [ObservableProperty] private string _ffmpegPath = "";
+
+    /// <summary>
+    /// 实验性：像素由后台线程写入，并借助一个不可见动画让渲染线程持续重绘，
+    /// 尝试在启动阶段 UI 线程繁忙时继续播放视频与动图。默认关闭。
+    /// </summary>
+    [ObservableProperty] private bool _useRenderThreadPlayback = false;
 }
 
 /// <summary>

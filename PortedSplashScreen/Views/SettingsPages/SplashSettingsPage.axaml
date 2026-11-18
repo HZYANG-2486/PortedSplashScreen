@@ -286,6 +286,14 @@
                 <Run>Foremist © 2025 by DannyFeng is licensed under CC BY-NC-ND 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/</Run>
             </TextBlock>
 
+            <controls:SettingsExpander Header="实验性：启动阶段继续播放"
+                                       Description="像素改由后台线程写入，并借助一个不可见动画让渲染线程持续重绘，尝试在 ClassIsland 启动占用 UI 线程时也让视频与动图继续播放。效果取决于渲染后端，可能不生效，默认关闭。"
+                                       IconSource="{ci:FluentIconSource &#xE890;}">
+                <controls:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.UseRenderThreadPlayback}" />
+                </controls:SettingsExpander.Footer>
+            </controls:SettingsExpander>
+
             <controls:SettingsExpander Header="按需下载背景素材"
                                        Description="内置背景图不随插件分发，需要时从原版仓库（GitHub raw，失败时回退 jsDelivr 镜像）下载，校验 SHA-256 后缓存到插件目录。关闭后将只使用已有缓存，缺失时显示占位背景。"
                                        IconSource="{ci:FluentIconSource &#xE896;}">

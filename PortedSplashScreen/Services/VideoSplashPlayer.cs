@@ -22,14 +22,14 @@ public sealed class VideoSplashPlayer : IDisposable
     private readonly byte[] _pixels;
     private readonly byte[] _renderPixels;
     private readonly LatestFrameBuffer _latest;
-    private readonly DispatcherTimer _timer;
+    private readonly DispatcherTimer? _timer;
     private readonly int _width;
     private readonly int _height;
     private readonly CancellationTokenSource _cancellation = new();
 
     private volatile bool _disposed;
 
-    private VideoSplashPlayer(Image target, Process process, int width, int height)
+    private VideoSplashPlayer(Image target, Process process, int width, int height, bool useRenderThread)
     {
         _target = target;
         _process = process;
@@ -47,11 +47,46 @@ public sealed class VideoSplashPlayer : IDisposable
 
         // 像素写入与重绘都放在 UI 线程上完成：在后台线程直接写 WriteableBitmap
         // 会与渲染线程竞争，实测会导致画面只更新最初几帧后停止刷新。
-        _timer = new DispatcherTimer { Interval = FrameInterval };
-        _timer.Tick += (_, _) => RenderLatestFrame();
-        _timer.Start();
+        // 实验模式改用后台写入 + 合成器保活动画，尝试绕开启动阶段被占用的 UI 线程。
+        if (useRenderThread)
+        {
+            CompositorKeepAlive.Start(_target);
+            _ = Task.Run(() => RenderLoopAsync(_cancellation.Token));
+        }
+        else
+        {
+            _timer = new DispatcherTimer { Interval = FrameInterval };
+            _timer.Tick += (_, _) => RenderLatestFrame();
+            _timer.Start();
+        }
 
         _ = Task.Run(() => ReadLoopAsync(_cancellation.Token));
+    }
+
+    private async Task RenderLoopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested && !_disposed)
+            {
+                await Task.Delay(FrameInterval, cancellationToken);
+                if (!_latest.TryRead(_renderPixels))
+                {
+                    continue;
+                }
+
+                using var locked = _frame.Lock();
+                var rowBytes = _width * 4;
+                for (var y = 0; y < _height; y++)
+                {
+                    Marshal.Copy(_renderPixels, y * rowBytes,
+                        IntPtr.Add(locked.Address, y * locked.RowBytes), rowBytes);
+                }
+            }
+        }
+        catch (Exception)
+        {
+        }
     }
 
     /// <summary>
@@ -63,7 +98,8 @@ public sealed class VideoSplashPlayer : IDisposable
     /// <param name="width">解码输出宽度。</param>
     /// <param name="height">解码输出高度。</param>
     public static VideoSplashPlayer? TryCreate(
-        Image target, string path, string ffmpegPath, int width, int height)
+        Image target, string path, string ffmpegPath, int width, int height,
+        bool useRenderThread = false)
     {
         if (!File.Exists(path) || !File.Exists(ffmpegPath) || width <= 0 || height <= 0)
         {
@@ -93,7 +129,7 @@ public sealed class VideoSplashPlayer : IDisposable
                 return null;
             }
 
-            var player = new VideoSplashPlayer(target, process, width, height);
+            var player = new VideoSplashPlayer(target, process, width, height, useRenderThread);
             target.Source = player._frame;
             return player;
         }
@@ -185,7 +221,7 @@ public sealed class VideoSplashPlayer : IDisposable
         }
 
         _disposed = true;
-        _timer.Stop();
+        _timer?.Stop();
         _cancellation.Cancel();
 
         try

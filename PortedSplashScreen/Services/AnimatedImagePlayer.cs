@@ -18,13 +18,14 @@ public sealed class AnimatedImagePlayer : IDisposable
     private readonly SKCodec _codec;
     private readonly SKBitmap _buffer;
     private readonly WriteableBitmap _frame;
-    private readonly DispatcherTimer _timer;
+    private readonly DispatcherTimer? _timer;
     private readonly byte[] _row;
+    private readonly object _decodeLock = new();
 
     private int _index;
-    private bool _disposed;
+    private volatile bool _disposed;
 
-    private AnimatedImagePlayer(Image target, SKCodec codec)
+    private AnimatedImagePlayer(Image target, SKCodec codec, bool useRenderThread)
     {
         _target = target;
         _codec = codec;
@@ -33,14 +34,17 @@ public sealed class AnimatedImagePlayer : IDisposable
         _frame = new WriteableBitmap(new PixelSize(codec.Info.Width, codec.Info.Height),
             new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
         _row = new byte[codec.Info.Width * 4];
-        _timer = new DispatcherTimer();
-        _timer.Tick += OnTick;
+        if (!useRenderThread)
+        {
+            _timer = new DispatcherTimer();
+            _timer.Tick += OnTick;
+        }
     }
 
     /// <summary>
     /// 尝试从文件创建播放器；静态图片、无法解码或只有一帧时返回 <see langword="null"/>。
     /// </summary>
-    public static AnimatedImagePlayer? TryCreate(Image target, string path)
+    public static AnimatedImagePlayer? TryCreate(Image target, string path, bool useRenderThread = false)
     {
         SKCodec? codec = null;
         AnimatedImagePlayer? player = null;
@@ -53,7 +57,7 @@ public sealed class AnimatedImagePlayer : IDisposable
                 return null;
             }
 
-            player = new AnimatedImagePlayer(target, codec);
+            player = new AnimatedImagePlayer(target, codec, useRenderThread);
             if (!player.ShowFrame(0))
             {
                 player.Dispose();
@@ -63,8 +67,18 @@ public sealed class AnimatedImagePlayer : IDisposable
             }
 
             target.Source = player._frame;
-            player._timer.Interval = player.GetDelay(0);
-            player._timer.Start();
+            if (useRenderThread)
+            {
+                // 实验模式：解码放到后台线程，并借助合成器保活动画争取在启动阶段也刷新画面
+                CompositorKeepAlive.Start(target);
+                player.StartRenderThreadLoop();
+            }
+            else
+            {
+                player._timer!.Interval = player.GetDelay(0);
+                player._timer.Start();
+            }
+
             return player;
         }
         catch (Exception)
@@ -96,7 +110,7 @@ public sealed class AnimatedImagePlayer : IDisposable
             _target.InvalidateVisual();
         }
 
-        _timer.Interval = GetDelay(_index);
+        _timer!.Interval = GetDelay(_index);
     }
 
     private TimeSpan GetDelay(int index)
@@ -114,6 +128,38 @@ public sealed class AnimatedImagePlayer : IDisposable
             return false;
         }
 
+        lock (_decodeLock)
+        {
+            return DecodeFrame(index);
+        }
+    }
+
+    private void StartRenderThreadLoop()
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (!_disposed)
+                {
+                    await Task.Delay(GetDelay(_index));
+                    if (_disposed)
+                    {
+                        return;
+                    }
+
+                    _index = AnimatedImageTiming.GetNextFrameIndex(_index, _codec.FrameCount);
+                    ShowFrame(_index);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        });
+    }
+
+    private bool DecodeFrame(int index)
+    {
         try
         {
             if (index == 0)
@@ -154,10 +200,16 @@ public sealed class AnimatedImagePlayer : IDisposable
         }
 
         _disposed = true;
-        _timer.Stop();
-        _timer.Tick -= OnTick;
-        _codec.Dispose();
-        _buffer.Dispose();
-        _frame.Dispose();
+        _timer?.Stop();
+        if (_timer != null)
+        {
+            _timer.Tick -= OnTick;
+        }
+        lock (_decodeLock)
+        {
+            _codec.Dispose();
+            _buffer.Dispose();
+            _frame.Dispose();
+        }
     }
 }
