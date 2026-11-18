@@ -432,6 +432,28 @@ public partial class SplashSettingsPage : SettingsPageBase
         }
     }
 
+    private async void OnBrowseAndroidStudioImageClick(object? sender, RoutedEventArgs e)
+    {
+        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storageProvider == null)
+        {
+            return;
+        }
+
+        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "选择 Android Studio 启动屏幕背景图片或视频",
+            AllowMultiple = false,
+            FileTypeFilter = [FilePickerFileTypes.ImageAll, VideoFileType]
+        });
+
+        if (files.Count > 0)
+        {
+            Plugin.Settings.CustomAndroidStudioSplashImagePath =
+                files[0].TryGetLocalPath() ?? files[0].Path.LocalPath;
+        }
+    }
+
     private async void OnBrowseFolderClick(object? sender, RoutedEventArgs e)
     {
         var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;

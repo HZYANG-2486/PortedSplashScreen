@@ -21,6 +21,8 @@
     <Compile Include="..\PortedSplashScreen\Services\SplashDuration.cs" Link="SplashDuration.cs" />
     <Compile Include="..\PortedSplashScreen\Services\FfmpegProvider.cs" Link="FfmpegProvider.cs" />
     <Compile Include="..\PortedSplashScreen\Services\QuietRestartPolicy.cs" Link="QuietRestartPolicy.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\VideoSplashArguments.cs" Link="VideoSplashArguments.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\LatestFrameBuffer.cs" Link="LatestFrameBuffer.cs" />
   </ItemGroup>
 
   <ItemGroup>

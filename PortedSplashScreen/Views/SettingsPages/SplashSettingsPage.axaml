@@ -77,8 +77,12 @@
                     </StackPanel>
                     <StackPanel x:Name="AsCustomPanel" Spacing="6">
                         <ci:Field Label="背景文件">
-                            <TextBox Text="{Binding Plugin.Settings.CustomAndroidStudioSplashImagePath}"
-                                     Watermark="本地图片/视频路径，或 https:// 网络图片链接" />
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Text="{Binding Plugin.Settings.CustomAndroidStudioSplashImagePath}"
+                                         Watermark="本地图片/视频路径，或 https:// 网络图片链接" />
+                                <Button Grid.Column="1" Margin="8,0,0,0" Content="浏览…"
+                                        Click="OnBrowseAndroidStudioImageClick" />
+                            </Grid>
                         </ci:Field>
                     </StackPanel>
                     <StackPanel x:Name="AsFolderPanel" Spacing="8">

@@ -14,14 +14,18 @@ namespace PortedSplashScreen.Services;
 /// </summary>
 public sealed class VideoSplashPlayer : IDisposable
 {
+    private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(33);
+
     private readonly Image _target;
     private readonly Process _process;
     private readonly WriteableBitmap _frame;
     private readonly byte[] _pixels;
+    private readonly byte[] _renderPixels;
+    private readonly LatestFrameBuffer _latest;
+    private readonly DispatcherTimer _timer;
     private readonly int _width;
     private readonly int _height;
     private readonly CancellationTokenSource _cancellation = new();
-    private readonly object _sync = new();
 
     private volatile bool _disposed;
 
@@ -33,10 +37,20 @@ public sealed class VideoSplashPlayer : IDisposable
         _height = height;
         _frame = new WriteableBitmap(new PixelSize(width, height),
             new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
-        _pixels = new byte[width * height * 4];
+        var frameBytes = width * height * 4;
+        _pixels = new byte[frameBytes];
+        _renderPixels = new byte[frameBytes];
+        _latest = new LatestFrameBuffer(frameBytes);
         // 必须持续清空 stderr，否则 FFmpeg 输出较多时会写满管道缓冲区而卡住解码
         _process.ErrorDataReceived += (_, _) => { };
         _process.BeginErrorReadLine();
+
+        // 像素写入与重绘都放在 UI 线程上完成：在后台线程直接写 WriteableBitmap
+        // 会与渲染线程竞争，实测会导致画面只更新最初几帧后停止刷新。
+        _timer = new DispatcherTimer { Interval = FrameInterval };
+        _timer.Tick += (_, _) => RenderLatestFrame();
+        _timer.Start();
+
         _ = Task.Run(() => ReadLoopAsync(_cancellation.Token));
     }
 
@@ -68,7 +82,7 @@ public sealed class VideoSplashPlayer : IDisposable
                 RedirectStandardError = true,
                 RedirectStandardInput = true
             };
-            foreach (var argument in BuildArguments(path, width, height))
+            foreach (var argument in VideoSplashArguments.Build(path, width, height))
             {
                 startInfo.ArgumentList.Add(argument);
             }
@@ -107,18 +121,6 @@ public sealed class VideoSplashPlayer : IDisposable
         }
     }
 
-    /// <summary>
-    /// 构造 FFmpeg 参数：循环播放、按原始速度读取、缩放裁剪到目标尺寸并输出 BGRA 原始帧。
-    /// </summary>
-    internal static IReadOnlyList<string> BuildArguments(string path, int width, int height) =>
-    [
-        "-hide_banner", "-loglevel", "error", "-nostdin",
-        "-stream_loop", "-1", "-re", "-i", path,
-        "-an",
-        "-vf", $"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height},fps=30",
-        "-f", "rawvideo", "-pix_fmt", "bgra", "pipe:1"
-    ];
-
     private async Task ReadLoopAsync(CancellationToken cancellationToken)
     {
         try
@@ -139,23 +141,8 @@ public sealed class VideoSplashPlayer : IDisposable
                     read += count;
                 }
 
-                lock (_sync)
-                {
-                    if (_disposed)
-                    {
-                        return;
-                    }
-
-                    CopyToFrame();
-                }
-
-                Dispatcher.UIThread.Post(() =>
-                {
-                    if (!_disposed)
-                    {
-                        _target.InvalidateVisual();
-                    }
-                });
+                // 只把帧交给缓冲区，实际的位图写入与重绘由 UI 线程的定时器完成
+                _latest.Write(_pixels);
             }
         }
         catch (Exception)
@@ -164,15 +151,22 @@ public sealed class VideoSplashPlayer : IDisposable
         }
     }
 
-    private void CopyToFrame()
+    private void RenderLatestFrame()
     {
+        if (_disposed || !_latest.TryRead(_renderPixels))
+        {
+            return;
+        }
+
         using var locked = _frame.Lock();
         var rowBytes = _width * 4;
         for (var y = 0; y < _height; y++)
         {
-            Marshal.Copy(_pixels, y * rowBytes,
+            Marshal.Copy(_renderPixels, y * rowBytes,
                 IntPtr.Add(locked.Address, y * locked.RowBytes), rowBytes);
         }
+
+        _target.InvalidateVisual();
     }
 
     /// <inheritdoc />
@@ -184,6 +178,7 @@ public sealed class VideoSplashPlayer : IDisposable
         }
 
         _disposed = true;
+        _timer.Stop();
         _cancellation.Cancel();
 
         try
@@ -212,11 +207,7 @@ public sealed class VideoSplashPlayer : IDisposable
             _target.Source = null;
         }
 
-        lock (_sync)
-        {
-            _frame.Dispose();
-        }
-
+        _frame.Dispose();
         _process.Dispose();
         _cancellation.Dispose();
     }
