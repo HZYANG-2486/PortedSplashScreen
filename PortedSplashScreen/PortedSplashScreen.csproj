@@ -35,7 +35,8 @@
 		<None Update="icon.png">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="README.md">
+		<!-- README 只保留仓库根目录这一份，打包时复制到插件目录，避免两份文案不同步 -->
+		<None Include="..\README.md" Link="README.md">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<!-- 第三方背景素材不随插件分发，由插件在运行时按需下载并校验 -->
