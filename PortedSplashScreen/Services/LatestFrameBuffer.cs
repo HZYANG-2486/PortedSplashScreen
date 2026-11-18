@@ -32,6 +32,20 @@ public sealed class LatestFrameBuffer
     public int Length => _first.Length;
 
     /// <summary>
+    /// 是否还有尚未被渲染消费的帧。
+    /// </summary>
+    public bool HasPendingFrame
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _hasNewFrame;
+            }
+        }
+    }
+
+    /// <summary>
     /// 写入一帧；已有未消费的帧会被直接覆盖。
     /// </summary>
     public void Write(ReadOnlySpan<byte> frame)

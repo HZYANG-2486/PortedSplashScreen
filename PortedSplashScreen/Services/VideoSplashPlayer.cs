@@ -128,6 +128,13 @@ public sealed class VideoSplashPlayer : IDisposable
             var output = _process.StandardOutput.BaseStream;
             while (!cancellationToken.IsCancellationRequested && !_disposed)
             {
+                // 上一帧还没被渲染消费时暂停读取：管道写满后 FFmpeg 会同步阻塞，
+                // 这样启动阶段 UI 线程被占用时视频会停在当前帧，恢复后从原处继续而不是跳帧。
+                while (!cancellationToken.IsCancellationRequested && !_disposed && _latest.HasPendingFrame)
+                {
+                    await Task.Delay(10, cancellationToken);
+                }
+
                 var read = 0;
                 while (read < _pixels.Length)
                 {

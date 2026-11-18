@@ -20,6 +20,23 @@ public class LatestFrameBufferTests
     }
 
     [Fact]
+    public void HasPendingFrame_TracksWrittenButNotRenderedFrames()
+    {
+        var buffer = new LatestFrameBuffer(4);
+        var destination = new byte[4];
+
+        Assert.False(buffer.HasPendingFrame);
+        buffer.Write([1, 2, 3, 4]);
+        Assert.True(buffer.HasPendingFrame);
+        Assert.True(buffer.TryRead(destination));
+        Assert.False(buffer.HasPendingFrame);
+        // 覆盖写入同样视为有待渲染的帧
+        buffer.Write([5, 6, 7, 8]);
+        buffer.Write([9, 10, 11, 12]);
+        Assert.True(buffer.HasPendingFrame);
+    }
+
+    [Fact]
     public void TryRead_ReturnsTheWrittenFrameOnce()
     {
         var buffer = new LatestFrameBuffer(4);
