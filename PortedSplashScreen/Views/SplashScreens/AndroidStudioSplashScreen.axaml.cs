@@ -56,6 +56,11 @@ public partial class AndroidStudioSplashScreen : SplashWindowBase
         _videoPlayer = null;
     }
 
+    /// <summary>
+    /// 预览文件夹轮播时切换到指定背景。
+    /// </summary>
+    internal bool ApplyPreviewImage(string path) => TryApplySplashImage(path);
+
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
         var visualProgressBarFill = ElementComposition.GetElementVisual(ProgressBarFill);

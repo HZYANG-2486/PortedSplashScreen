@@ -23,6 +23,7 @@
     <Compile Include="..\PortedSplashScreen\Services\QuietRestartPolicy.cs" Link="QuietRestartPolicy.cs" />
     <Compile Include="..\PortedSplashScreen\Services\VideoSplashArguments.cs" Link="VideoSplashArguments.cs" />
     <Compile Include="..\PortedSplashScreen\Services\LatestFrameBuffer.cs" Link="LatestFrameBuffer.cs" />
+    <Compile Include="..\PortedSplashScreen\Services\CarouselStepper.cs" Link="CarouselStepper.cs" />
   </ItemGroup>
 
   <ItemGroup>

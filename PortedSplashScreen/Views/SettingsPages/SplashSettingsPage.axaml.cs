@@ -4,8 +4,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using ClassIsland.Core.Abstractions.Controls;
 using ClassIsland.Core.Abstractions.Services;
 using ClassIsland.Core.Attributes;
@@ -242,18 +244,86 @@ public partial class SplashSettingsPage : SettingsPageBase
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Background = splash.Background,
             ShowInTaskbar = false,
-            RequestedThemeVariant = splash.RequestedThemeVariant,
-            Content = content
+            RequestedThemeVariant = splash.RequestedThemeVariant
         };
 
         // 复制窗口级的继承属性，避免文字颜色等在原窗口上定义的样式丢失
         preview.SetValue(TextElement.ForegroundProperty, splash.GetValue(TextElement.ForegroundProperty));
 
+        IReadOnlyList<string> folderImages = Plugin.IsFolderBackgroundActive
+            ? ImageFolderProvider.GetImages(Plugin.Settings.CustomImageFolderPath)
+            : Array.Empty<string>();
+        DispatcherTimer? carouselTimer = null;
+        if (folderImages.Count > 0)
+        {
+            // 底部切换栏需要额外的固定高度，避免挤压启动画面本身
+            preview.Height = Math.Min(preview.Height + 48, 900);
+            var grid = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
+            Grid.SetRow(content, 0);
+            grid.Children.Add(content);
+
+            var counter = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+            var previousButton = new Button { Content = "上一张" };
+            var nextButton = new Button { Content = "下一张" };
+            var bar = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Spacing = 8,
+                Margin = new Thickness(0, 8)
+            };
+            bar.Children.Add(previousButton);
+            bar.Children.Add(counter);
+            bar.Children.Add(nextButton);
+            Grid.SetRow(bar, 1);
+            grid.Children.Add(bar);
+            preview.Content = grid;
+
+            var index = 0;
+            void Apply(int target)
+            {
+                index = CarouselStepper.Move(target, folderImages.Count, 0);
+                var applied = splash switch
+                {
+                    AndroidStudioSplashScreen androidStudio => androidStudio.ApplyPreviewImage(folderImages[index]),
+                    AdobePhotoshopSplashScreen photoshop => photoshop.ApplyPreviewImage(folderImages[index]),
+                    _ => false
+                };
+                counter.Text = $"{index + 1} / {folderImages.Count}" + (applied ? "" : "（无法预览该文件）");
+            }
+
+            previousButton.Click += (_, _) => Apply(CarouselStepper.Move(index, folderImages.Count, -1));
+            nextButton.Click += (_, _) => Apply(CarouselStepper.Move(index, folderImages.Count, 1));
+            Apply(0);
+
+            // 自动轮播与真实启动的“每次启动换一张”节奏无关，仅用于在预览里展示切换效果
+            if (folderImages.Count > 1)
+            {
+                carouselTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                carouselTimer.Tick += (_, _) => Apply(CarouselStepper.Move(index, folderImages.Count, 1));
+                carouselTimer.Start();
+            }
+
+            PreviewHintText.Text = folderImages.Count > 1
+                ? $"正在轮播预览：共 {folderImages.Count} 张，每 3 秒自动切换，也可用下方按钮手动切换。"
+                : "文件夹内只有 1 张可用的背景，切换方式不会产生可见变化。";
+        }
+        else
+        {
+            preview.Content = content;
+            PreviewHintText.Text = Plugin.IsFolderBackgroundActive
+                ? "背景文件夹中没有可用的图片或视频。"
+                : "正在显示静态预览，关闭预览窗口即可返回。";
+        }
+
         // 预览用的是真实启动画面实例，但它从未显示过，不会触发自身的 Closed，
         // 需要在预览关闭时手动释放动图/视频播放器与事件订阅。
-        preview.Closed += (_, _) => ReleaseSplashInstance(splash);
+        preview.Closed += (_, _) =>
+        {
+            carouselTimer?.Stop();
+            ReleaseSplashInstance(splash);
+        };
 
-        PreviewHintText.Text = "正在显示静态预览，关闭预览窗口即可返回。";
         if (TopLevel.GetTopLevel(this) is Window owner)
         {
             _ = preview.ShowDialog(owner);

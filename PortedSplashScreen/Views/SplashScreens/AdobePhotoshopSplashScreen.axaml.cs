@@ -47,6 +47,11 @@ public partial class AdobePhotoshopSplashScreen : SplashWindowBase
         _videoPlayer = null;
     }
 
+    /// <summary>
+    /// 预览文件夹轮播时切换到指定背景。
+    /// </summary>
+    internal bool ApplyPreviewImage(string path) => TryApplySplashImage(path);
+
     private async Task LoadSplashImageAsync(Plugin plugin)
     {
         // 文件夹图片优先于单张自定义背景
