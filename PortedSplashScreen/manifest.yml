@@ -5,6 +5,7 @@
 id: com.ported.classisland.portedSplashScreen
 name: PortedSplashScreen
 description: MoreSplashScreen 的 V2 非官方移植版。
+icon: icon.png
 entranceAssembly: "PortedSplashScreen.dll"
 url: https://github.com/HZYANG-2486/PortedSplashScreen
 version: 1.0.0.0
