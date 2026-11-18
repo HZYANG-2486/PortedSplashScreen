@@ -14,11 +14,16 @@ public static class CompositorKeepAlive
     /// <summary>
     /// 在指定控件上启动保活动画。
     /// </summary>
-    public static void Start(Visual target)
+    /// <param name="target">需要持续重绘的控件。</param>
+    /// <param name="frameInterval">
+    /// 每次动画迭代的时长。它决定合成器提交新帧的频率，因此直接限制了画面的实际更新帧率，
+    /// 默认与视频帧间隔（约 30fps）保持一致。
+    /// </param>
+    public static void Start(Visual target, TimeSpan? frameInterval = null)
     {
         var animation = new Animation
         {
-            Duration = TimeSpan.FromMilliseconds(100),
+            Duration = frameInterval ?? TimeSpan.FromMilliseconds(33),
             IterationCount = IterationCount.Infinite,
             Children =
             {
@@ -30,7 +35,7 @@ public static class CompositorKeepAlive
                 new KeyFrame
                 {
                     Cue = new Cue(1),
-                    Setters = { new Setter(Visual.OpacityProperty, 0.999d) }
+                    Setters = { new Setter(Visual.OpacityProperty, 0.995d) }
                 }
             }
         };
